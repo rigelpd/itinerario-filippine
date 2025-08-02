@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Itinerario di Viaggio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .card {
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
+            padding: 1.5rem; /* p-6 */
+            margin-bottom: 1.5rem; /* mb-6 */
+            transition: all 0.3s ease-in-out;
+            border-left-width: 4px;
+        }
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); /* shadow-lg */
+            transform: translateY(-2px);
+        }
+        h1, h2, h3 {
+            font-weight: 700;
+        }
+        input, textarea, select {
+            width: 100%;
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid #d1d5db; /* border-gray-300 */
+            padding: 0.5rem 0.75rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background-color: white;
+        }
+        textarea {
+            resize: none;
+            overflow: hidden;
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #6366f1; /* indigo-500 */
+            box-shadow: 0 0 0 2px #c7d2fe; /* indigo-200 */
+        }
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            color: #4b5563; /* gray-600 */
+        }
+        .day-card { background-color: white; border-color: #a5b4fc; }
+        .flight-card { background-color: #e0e7ff; border-color: #818cf8; }
+        .cruise-card { background-color: #e0f2fe; border-color: #38bdf8; }
+        .final-day-card { background-color: #d1fae5; border-color: #34d399; }
+        .image-placeholder { min-height: 220px; }
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+        .tab-button.active {
+            background-color: #4f46e5; /* indigo-600 */
+            color: white;
+        }
+        .tab-button:not(.active) {
+            background-color: white;
+            color: #4f46e5;
+            border-color: #e0e7ff;
+        }
+        #save-status {
+            transition: opacity 0.5s ease-in-out;
+        }
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-sky-500">
+                Editor Itinerario di Viaggio
+            </h1>
+            <div class="mt-8 max-w-3xl mx-auto">
+                <input type="text" id="main-title" value="Viaggio a Hong Kong, Macao e Filippine" class="text-2xl md:text-3xl font-bold text-center border-0 border-b-2 border-gray-300 focus:ring-0 focus:border-indigo-500 bg-transparent py-2 placeholder-gray-400">
+            </div>
+            <div class="mt-6 max-w-4xl mx-auto">
+                <label for="main-image-input" class="cursor-pointer block">
+                    <div id="main-image-placeholder" class="w-full h-64 bg-slate-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-400 hover:bg-slate-300 transition-colors">
+                        <div class="text-center text-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l-1.586-1.586a2 2 0 00-2.828 0L6 14m6-6v12" /></svg>
+                            <p class="text-lg">Allega un'immagine di copertina</p>
+                        </div>
+                    </div>
+                    <img id="main-image-preview" class="hidden w-full h-64 object-cover rounded-lg shadow-lg" src="" alt="Immagine di copertina"/>
+                </label>
+                <input type="file" id="main-image-input" class="hidden" accept="image/*">
+            </div>
+        </header>
+        
+        <!-- Controls -->
+        <div class="flex justify-center items-center gap-4 mb-8">
+            <button id="save-btn" class="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors">Salva Modifiche</button>
+            <button id="pdf-btn" class="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-colors">Salva come PDF</button>
+            <button id="reset-btn" class="px-6 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 transition-colors">Reset Itinerario</button>
+            <span id="save-status" class="text-green-600 font-medium opacity-0">Modifiche salvate!</span>
+        </div>
+
+        <!-- Calendario Riepilogativo -->
+        <section id="calendar-summary" class="mb-10">
+            <h2 class="text-2xl mb-4 border-b pb-2 border-gray-300 font-bold text-gray-700">Calendario del Viaggio</h2>
+            <div id="calendar-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2"></div>
+        </section>
+
+        <!-- Tabs -->
+        <div class="flex justify-center gap-4 mb-8">
+            <button id="tab-btn-itinerary" class="tab-button active">Itinerario Dettagliato</button>
+            <button id="tab-btn-flights" class="tab-button">Riepilogo Voli</button>
+        </div>
+
+        <!-- Contenuto delle Schede -->
+        <main id="main-content">
+            <section id="itinerary-content">
+                <div id="itinerary-container"></div>
+            </section>
+            <section id="flights-content" class="hidden">
+                <div id="flights-container"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // --- DATA ---
+        const defaultFlightsData = [
+            { idPrefix: 'out', title: 'Volo di Andata: Bologna → Hong Kong', depAirport: 'Aeroporto di Bologna (BLQ)', arrAirport: 'Aeroporto Internazionale di Hong Kong (HKG)', depTime: '2026-02-28T10:55', arrTime: '2026-03-01T08:20', depTz: 'CET', arrTz: 'GMT+8' },
+            { idPrefix: 'int1', title: 'Volo: Hong Kong → Boracay', depAirport: 'Aeroporto di Hong Kong (HKG)', arrAirport: 'Aeroporto di Caticlan (MPH)', depTime: '2026-03-04T10:05', arrTime: '2026-03-04T15:45', depTz: 'GMT+8', arrTz: 'GMT+8' },
+            { idPrefix: 'int2', title: 'Volo: Boracay → El Nido', depAirport: 'Aeroporto di Caticlan (MPH)', arrAirport: 'Aeroporto di El Nido (ENI)', depTime: '2026-03-10T15:15', arrTime: '2026-03-10T16:25', depTz: 'GMT+8', arrTz: 'GMT+8' },
+            { idPrefix: 'ret', title: 'Volo di Ritorno: Busuanga → Bologna', depAirport: 'Aeroporto di Busuanga (USU)', arrAirport: 'Aeroporto di Bologna (BLQ)', depTime: '2026-03-21T16:15', arrTime: '2026-03-22T09:55', depTz: 'GMT+8', arrTz: 'CET' }
+        ];
+        const defaultItineraryData = [
+            { date: '2026-03-01', location: 'Hong Kong', isFlight: true, isCruise: false, accommodation: 'Hotel a Tsim Sha Tsui', activities: "Arrivo a Hong Kong...", image: '' },
+            { date: '2026-03-02', location: 'Hong Kong', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a Hong Kong', activities: "Visita dell'Isola di Hong Kong...", image: '' },
+            { date: '2026-03-03', location: 'Macao / HK', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a Hong Kong', activities: "Escursione a Macao...", image: '' },
+            { date: '2026-03-04', location: 'Boracay', isFlight: true, isCruise: false, accommodation: 'Volo per Boracay', activities: "Partenza per Boracay...", image: '' },
+            { date: '2026-03-05', location: 'Boracay', isFlight: false, isCruise: false, accommodation: 'Hotel a Boracay', activities: "Relax sulla White Beach...", image: '' },
+            { date: '2026-03-06', location: 'Boracay', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a Boracay', activities: "Attività acquatiche...", image: '' },
+            { date: '2026-03-07', location: 'Boracay', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a Boracay', activities: "Island hopping tour...", image: '' },
+            { date: '2026-03-08', location: 'Boracay', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a Boracay', activities: "Relax o escursione...", image: '' },
+            { date: '2026-03-09', location: 'Boracay', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a Boracay', activities: "Giorno libero...", image: '' },
+            { date: '2026-03-10', location: 'El Nido', isFlight: true, isCruise: false, accommodation: 'Volo per El Nido', activities: "Partenza per El Nido...", image: '' },
+            { date: '2026-03-11', location: 'El Nido', isFlight: false, isCruise: false, accommodation: 'Hotel a El Nido', activities: "Escursione Tour A...", image: '' },
+            { date: '2026-03-12', location: 'El Nido', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a El Nido', activities: "Escursione Tour C...", image: '' },
+            { date: '2026-03-13', location: 'El Nido', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a El Nido', activities: "Escursione Tour B...", image: '' },
+            { date: '2026-03-14', location: 'In Crociera', isFlight: false, isCruise: true, accommodation: 'A bordo della crociera', activities: "Inizio della crociera...", image: '' },
+            { date: '2026-03-15', location: 'In Crociera', isFlight: false, isCruise: true, accommodation: 'A bordo della crociera', activities: "Continuo della crociera...", image: '' },
+            { date: '2026-03-16', location: 'In Crociera', isFlight: false, isCruise: true, accommodation: 'A bordo della crociera', activities: "Continuo della crociera...", image: '' },
+            { date: '2026-03-17', location: 'Coron', isFlight: false, isCruise: false, accommodation: 'Hotel a Coron', activities: "Arrivo a Coron Island...", image: '' },
+            { date: '2026-03-18', location: 'Coron', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a Coron', activities: "Tour di Coron Island...", image: '' },
+            { date: '2026-03-19', location: 'Coron', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a Coron', activities: "Tour dei relitti...", image: '' },
+            { date: '2026-03-20', location: 'Coron', isFlight: false, isCruise: false, accommodation: 'Stesso hotel a Coron', activities: "Giorno libero a Coron...", image: '' },
+            { date: '2026-03-21', location: 'In Volo', isFlight: true, isCruise: false, accommodation: 'A bordo del volo', activities: "Partenza per l'Italia...", image: '' },
+            { date: '2026-03-22', location: 'Italia', isFlight: false, isCruise: false, accommodation: 'Casa', activities: "Arrivo in Italia...", image: '' }
+        ];
+        const defaultMainData = { title: 'Viaggio a Hong Kong, Macao e Filippine', image: '' };
+
+        // --- LOCAL STORAGE FUNCTIONS ---
+        function saveItinerary() {
+            try {
+                const dataToSave = {
+                    main: {
+                        title: document.getElementById('main-title').value,
+                        image: document.getElementById('main-image-preview').src,
+                    },
+                    flights: [],
+                    itinerary: [],
+                };
+
+                document.querySelectorAll('#flights-container .flight-card').forEach(card => {
+                    const idPrefix = card.dataset.idprefix;
+                    dataToSave.flights.push({
+                        idPrefix: idPrefix,
+                        title: card.querySelector('h3').textContent.replace('✈️ ', ''),
+                        depAirport: document.getElementById(`${idPrefix}-dep-airport`).value,
+                        arrAirport: document.getElementById(`${idPrefix}-arr-airport`).value,
+                        depTime: document.getElementById(`${idPrefix}-dep-time`).value,
+                        arrTime: document.getElementById(`${idPrefix}-arr-time`).value,
+                        depTz: document.getElementById(`${idPrefix}-dep-tz`).value,
+                        arrTz: document.getElementById(`${idPrefix}-arr-tz`).value,
+                    });
+                });
+
+                document.querySelectorAll('#itinerary-container .day-card-wrapper').forEach((card, index) => {
+                    const dayId = `day${index + 1}`;
+                    dataToSave.itinerary.push({
+                        date: document.getElementById(`${dayId}-date`).value,
+                        location: document.getElementById(`${dayId}-location`).value,
+                        isFlight: document.getElementById(`${dayId}-flight-check`).checked,
+                        isCruise: document.getElementById(`${dayId}-cruise-check`).checked,
+                        accommodation: document.getElementById(`${dayId}-accommodation`).value,
+                        activities: document.getElementById(`${dayId}-activities`).value,
+                        image: document.getElementById(`${dayId}-image-preview`).src,
+                    });
+                });
+                
+                localStorage.setItem('travelItineraryData', JSON.stringify(dataToSave));
+                
+                const status = document.getElementById('save-status');
+                status.classList.remove('opacity-0');
+                setTimeout(() => status.classList.add('opacity-0'), 2000);
+
+            } catch (e) {
+                console.error("Error saving to localStorage", e);
+                alert("Errore durante il salvataggio. La memoria potrebbe essere piena.");
+            }
+        }
+
+        function loadItinerary() {
+            const savedData = localStorage.getItem('travelItineraryData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                return {
+                    main: data.main || defaultMainData,
+                    flights: data.flights || defaultFlightsData,
+                    itinerary: data.itinerary || defaultItineraryData
+                };
+            }
+            return { main: defaultMainData, flights: defaultFlightsData, itinerary: defaultItineraryData };
+        }
+
+        function resetItinerary() {
+            if (confirm("Sei sicuro di voler cancellare tutte le modifiche? L'operazione non è reversibile.")) {
+                localStorage.removeItem('travelItineraryData');
+                location.reload();
+            }
+        }
+
+        // --- PDF EXPORT FUNCTION (FIXED) ---
+        async function saveAsPDF() {
+            const pdfBtn = document.getElementById('pdf-btn');
+            pdfBtn.textContent = 'Generazione PDF...';
+            pdfBtn.disabled = true;
+
+            const printContainer = document.createElement('div');
+            printContainer.style.position = 'absolute';
+            printContainer.style.left = '-9999px';
+            printContainer.style.width = '1024px';
+            printContainer.style.backgroundColor = 'white';
+            printContainer.style.padding = '20px';
+            printContainer.style.fontFamily = "'Inter', sans-serif";
+
+            // Clone the content
+            const header = document.querySelector('header').cloneNode(true);
+            const calendar = document.getElementById('calendar-summary').cloneNode(true);
+            const itinerary = document.getElementById('itinerary-content').cloneNode(true);
+            const flights = document.getElementById('flights-content').cloneNode(true);
+            
+            const flightsTitle = document.createElement('h2');
+            flightsTitle.className = 'text-2xl mt-12 mb-4 border-b pb-2 border-gray-300 font-bold text-gray-700';
+            flightsTitle.textContent = 'Riepilogo Voli';
+            flightsTitle.style.pageBreakBefore = 'always';
+
+            // --- Start Cleanup Logic for PDF ---
+            const allClones = [header, calendar, itinerary, flights];
+            allClones.forEach(clone => {
+                clone.classList.remove('hidden');
+
+                // Ensure preview images are visible and placeholders are hidden
+                clone.querySelectorAll('img[id$="-preview"]').forEach(img => {
+                    if (img.src && img.src.startsWith('data:')) {
+                        img.classList.remove('hidden');
+                        img.style.display = 'block';
+                    } else {
+                        img.remove(); // Remove empty image tags
+                    }
+                });
+
+                // Remove all placeholders, buttons, and file inputs
+                clone.querySelectorAll('.image-placeholder, button, input[type="file"]').forEach(el => el.remove());
+
+                // Replace text inputs and textareas with static paragraphs
+                clone.querySelectorAll('input[type="text"], input[type="date"], input[type="datetime-local"], textarea').forEach(el => {
+                    const p = document.createElement('p');
+                    let value = el.value;
+                    if (el.type === 'date') {
+                        value = new Date(value + 'T00:00:00').toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+                    }
+                    if (el.type === 'datetime-local') {
+                         value = new Date(value).toLocaleString('it-IT', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    }
+                    p.textContent = value;
+                    
+                    if (el.tagName === 'TEXTAREA') {
+                        p.style.whiteSpace = 'pre-wrap';
+                        p.style.wordBreak = 'break-word';
+                    }
+                    if (el.id === 'main-title') {
+                        p.className = el.className;
+                        p.style.border = 'none';
+                        p.style.backgroundColor = 'transparent';
+                        p.style.padding = el.style.padding || '0.5rem';
+                    }
+                    el.parentNode.replaceChild(p, el);
+                });
+                
+                // Remove all labels and checkbox-related elements
+                clone.querySelectorAll('label, input[type="checkbox"]').forEach(el => el.remove());
+
+                // Final card styling for PDF
+                clone.querySelectorAll('.card').forEach(c => {
+                    c.style.boxShadow = 'none';
+                    c.style.border = '1px solid #e5e7eb';
+                });
+            });
+            // --- End Cleanup Logic ---
+
+            printContainer.append(header, calendar, itinerary, flightsTitle, flights);
+            document.body.appendChild(printContainer);
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const canvas = await html2canvas(printContainer, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                const ratio = canvas.width / pdfWidth;
+                const imgHeight = canvas.height / ratio;
+                
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdfHeight;
+
+                while (heightLeft > 0) {
+                    position = - (imgHeight - heightLeft);
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+                }
+                
+                const title = document.getElementById('main-title').value.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                pdf.save(`itinerario_${title}.pdf`);
+
+            } catch (error) {
+                console.error("Error generating PDF:", error);
+                alert("Si è verificato un errore durante la creazione del PDF.");
+            } finally {
+                document.body.removeChild(printContainer);
+                pdfBtn.textContent = 'Salva come PDF';
+                pdfBtn.disabled = false;
+            }
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function renderApp(data) {
+            document.getElementById('main-title').value = data.main.title;
+            const mainImgPreview = document.getElementById('main-image-preview');
+            if (data.main.image && data.main.image.startsWith('data:image')) {
+                mainImgPreview.src = data.main.image;
+                mainImgPreview.classList.remove('hidden');
+                document.getElementById('main-image-placeholder').classList.add('hidden');
+            }
+            createDetailedItinerary(data.itinerary);
+            createFlightsList(data.flights);
+            updateCalendar();
+            setupEventListeners();
+        }
+
+        function updateCalendar() {
+            const calendarContainer = document.getElementById('calendar-container');
+            calendarContainer.innerHTML = '';
+            document.querySelectorAll('#itinerary-container .day-card-wrapper').forEach((card, index) => {
+                const dayId = `day${index + 1}`;
+                const dateInput = document.getElementById(`${dayId}-date`);
+                const locationInput = document.getElementById(`${dayId}-location`);
+                const flightCheck = document.getElementById(`${dayId}-flight-check`);
+                const cruiseCheck = document.getElementById(`${dayId}-cruise-check`);
+                if (!dateInput || !locationInput || !flightCheck || !cruiseCheck) return;
+                const dateObj = new Date(dateInput.value + 'T00:00:00');
+                let eventIcon = '';
+                if (flightCheck.checked) eventIcon += '✈️';
+                if (cruiseCheck.checked) eventIcon += '🚢';
+                const dayHtml = `<div class="p-2 rounded-lg bg-white shadow flex flex-col items-center text-center"><div class="font-bold text-indigo-600">${dateObj.getDate()} ${dateObj.toLocaleDateString('it-IT', { month: 'short' }).toUpperCase()}</div><div class="text-sm text-gray-600 font-medium mt-1">${locationInput.value}</div><div class="text-xl mt-1">${eventIcon}</div></div>`;
+                calendarContainer.innerHTML += dayHtml;
+            });
+        }
+
+        function createDetailedItinerary(data) {
+            const container = document.getElementById('itinerary-container');
+            container.innerHTML = '';
+            data.forEach((item, index) => {
+                const dayId = `day${index + 1}`;
+                const dateObj = new Date(item.date + 'T00:00:00');
+                const dateString = dateObj.toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const cardHtml = `
+                    <div class="card day-card flex flex-col md:flex-row gap-6 items-stretch day-card-wrapper">
+                        <div class="w-full md:w-1/2 flex flex-col">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">${dateString} (Giorno ${index + 1})</h3>
+                            <div class="grid grid-cols-1 gap-4 flex-grow">
+                                <div><label for="${dayId}-date">Data</label><input type="date" id="${dayId}-date" value="${item.date}"></div>
+                                <div><label for="${dayId}-location">Località</label><input type="text" id="${dayId}-location" value="${item.location}"></div>
+                                <div><label for="${dayId}-accommodation">Alloggio</label><input type="text" id="${dayId}-accommodation" value="${item.accommodation}"></div>
+                                <div class="flex-grow flex flex-col"><label for="${dayId}-activities">Attività</label><textarea id="${dayId}-activities" class="w-full">${item.activities}</textarea></div>
+                                <div class="flex items-center gap-6 mt-2">
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="${dayId}-flight-check" ${item.isFlight ? 'checked' : ''} class="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500"> <span>✈️ Volo</span></label>
+                                    <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="${dayId}-cruise-check" ${item.isCruise ? 'checked' : ''} class="w-5 h-5 rounded text-sky-600 focus:ring-sky-500"> <span>🚢 Crociera</span></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-1/2">
+                            <label for="${dayId}-image-input" class="cursor-pointer w-full h-full flex">
+                                <div id="${dayId}-image-placeholder" class="image-placeholder w-full h-full bg-slate-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-400 hover:bg-slate-300 transition-colors ${item.image ? 'hidden' : ''}">
+                                    <div class="text-center text-gray-600"><svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg><p>Aggiungi immagine</p></div>
+                                </div>
+                                <img id="${dayId}-image-preview" class="object-cover rounded-lg ${item.image ? '' : 'hidden'}" src="${item.image}" alt="Anteprima"/>
+                            </label>
+                            <input type="file" id="${dayId}-image-input" class="hidden" accept="image/*">
+                        </div>
+                    </div>`;
+                container.innerHTML += cardHtml;
+            });
+        }
+
+        function createFlightsList(data) {
+            const container = document.getElementById('flights-container');
+            container.innerHTML = '';
+            data.forEach(flight => {
+                const flightHtml = `
+                    <div class="card flight-card" data-idprefix="${flight.idPrefix}">
+                        <h3 class="text-xl mb-4 font-semibold text-indigo-700">✈️ ${flight.title}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div><label for="${flight.idPrefix}-dep-airport">Aeroporto Partenza</label><input type="text" id="${flight.idPrefix}-dep-airport" value="${flight.depAirport}"></div>
+                            <div><label for="${flight.idPrefix}-arr-airport">Aeroporto Arrivo</label><input type="text" id="${flight.idPrefix}-arr-airport" value="${flight.arrAirport}"></div>
+                            <div><label for="${flight.idPrefix}-dep-time">Data/Ora Partenza</label><input type="datetime-local" id="${flight.idPrefix}-dep-time" value="${flight.depTime}"></div>
+                            <div><label for="${flight.idPrefix}-arr-time">Data/Ora Arrivo</label><input type="datetime-local" id="${flight.idPrefix}-arr-time" value="${flight.arrTime}"></div>
+                            <div><label for="${flight.idPrefix}-dep-tz">Fuso Orario Partenza</label><input type="text" id="${flight.idPrefix}-dep-tz" value="${flight.depTz}"></div>
+                            <div><label for="${flight.idPrefix}-arr-tz">Fuso Orario Arrivo</label><input type="text" id="${flight.idPrefix}-arr-tz" value="${flight.arrTz}"></div>
+                        </div>
+                        <p id="${flight.idPrefix}-duration" class="mt-4 text-lg font-semibold text-indigo-800"></p>
+                    </div>`;
+                container.innerHTML += flightHtml;
+            });
+        }
+
+        // --- UTILITY & EVENT LISTENERS ---
+        function getTimezoneOffset(tzString) { tzString = tzString.toUpperCase(); if (tzString === 'CET') return 1; if (tzString.startsWith('GMT+')) return parseInt(tzString.replace('GMT+', ''), 10); if (tzString.startsWith('GMT-')) return -parseInt(tzString.replace('GMT-', ''), 10); return 0; }
+        function formatOffset(offset) { const sign = offset >= 0 ? '+' : '-'; const absOffset = Math.abs(offset); const hours = String(Math.floor(absOffset)).padStart(2, '0'); const minutes = String((absOffset % 1) * 60).padStart(2, '0'); return `${sign}${hours}:${minutes}`; }
+        function calculateDuration(depTimeId, arrTimeId, depTzId, arrTzId, durationElId) { const [depTimeInput, arrTimeInput, depTzInput, arrTzInput, durationEl] = [depTimeId, arrTimeId, depTzId, arrTzId, durationElId].map(id => document.getElementById(id)); if (depTimeInput && depTimeInput.value && arrTimeInput.value && depTzInput.value && arrTzInput.value) { const depOffset = getTimezoneOffset(depTzInput.value); const arrOffset = getTimezoneOffset(arrTzInput.value); const depDate = new Date(`${depTimeInput.value}:00${formatOffset(depOffset)}`); const arrDate = new Date(`${arrTimeInput.value}:00${formatOffset(arrOffset)}`); let diff = arrDate.getTime() - depDate.getTime(); if (diff < 0) { durationEl.textContent = "Arrivo prima della partenza."; durationEl.classList.add('text-red-500'); return; } durationEl.classList.remove('text-red-500'); const diffHours = Math.floor(diff / 3600000); const diffMinutes = Math.round((diff % 3600000) / 60000); durationEl.textContent = `Durata: ${diffHours}h ${diffMinutes}m`; } }
+        function autoGrowTextarea(element) { element.style.height = 'auto'; element.style.height = (element.scrollHeight) + 'px'; }
+        
+        async function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.7) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > height) {
+                            if (width > maxWidth) {
+                                height *= maxWidth / width;
+                                width = maxWidth;
+                            }
+                        } else {
+                            if (height > maxHeight) {
+                                width *= maxHeight / height;
+                                height = maxHeight;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.onerror = (error) => reject(error);
+                };
+                reader.onerror = (error) => reject(error);
+            });
+        }
+
+        async function handleImageUpload(event) {
+            const input = event.target;
+            const idPrefix = input.id.replace('-image-input', '');
+            const preview = document.getElementById(`${idPrefix}-image-preview`);
+            const placeholder = document.getElementById(`${idPrefix}-image-placeholder`);
+            const file = input.files[0];
+            
+            if (file) {
+                try {
+                    const compressedDataUrl = await compressImage(file);
+                    preview.src = compressedDataUrl;
+                    preview.classList.remove('hidden');
+                    if (placeholder) {
+                        placeholder.classList.add('hidden');
+                    }
+                    saveItinerary();
+                } catch (error) {
+                    console.error("Error compressing image:", error);
+                    alert("Si è verificato un errore durante l'elaborazione dell'immagine.");
+                }
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('save-btn').addEventListener('click', saveItinerary);
+            document.getElementById('reset-btn').addEventListener('click', resetItinerary);
+            document.getElementById('pdf-btn').addEventListener('click', saveAsPDF);
+            document.getElementById('main-image-input').addEventListener('change', handleImageUpload);
+            
+            const itineraryBtn = document.getElementById('tab-btn-itinerary');
+            const flightsBtn = document.getElementById('tab-btn-flights');
+            const itineraryContent = document.getElementById('itinerary-content');
+            const flightsContent = document.getElementById('flights-content');
+
+            itineraryBtn.addEventListener('click', () => { itineraryContent.classList.remove('hidden'); flightsContent.classList.add('hidden'); itineraryBtn.classList.add('active'); flightsBtn.classList.remove('active'); });
+            flightsBtn.addEventListener('click', () => { itineraryContent.classList.add('hidden'); flightsContent.classList.remove('hidden'); itineraryBtn.classList.remove('active'); flightsBtn.classList.add('active'); });
+
+            document.querySelectorAll('#flights-container input').forEach(el => el.addEventListener('change', () => calculateDuration(el.closest('.flight-card').dataset.idprefix + '-dep-time', el.closest('.flight-card').dataset.idprefix + '-arr-time', el.closest('.flight-card').dataset.idprefix + '-dep-tz', el.closest('.flight-card').dataset.idprefix + '-arr-tz', el.closest('.flight-card').dataset.idprefix + '-duration')));
+            document.querySelectorAll('.flight-card').forEach(card => calculateDuration(card.dataset.idprefix + '-dep-time', card.dataset.idprefix + '-arr-time', card.dataset.idprefix + '-dep-tz', card.dataset.idprefix + '-arr-tz', card.dataset.idprefix + '-duration'));
+
+            document.querySelectorAll('input[type="file"][id^="day"]').forEach(input => input.addEventListener('change', handleImageUpload));
+            document.querySelectorAll('textarea[id$="-activities"]').forEach(textarea => { autoGrowTextarea(textarea); textarea.addEventListener('input', () => autoGrowTextarea(textarea)); });
+            
+            document.getElementById('main-content').addEventListener('input', (event) => {
+                if (event.target.matches('input, textarea')) {
+                    saveItinerary();
+                    if (event.target.matches('input[id$="-location"], input[id$="-date"], input[type="checkbox"]')) {
+                        updateCalendar();
+                    }
+                }
+            });
+        }
+
+        // --- APP INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const appData = loadItinerary();
+            renderApp(appData);
+        });
+    </script>
+</body>
+</html>
