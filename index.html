@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor Itinerario di Viaggio (Condiviso)</title>
+    <title>Editor Itinerario di Viaggio (Condiviso/Locale)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -107,7 +107,7 @@
     <div id="password-overlay" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center z-50">
         <div class="bg-white p-8 rounded-lg shadow-xl text-center w-full max-w-sm mx-4">
             <h2 class="text-2xl font-bold mb-4">Inserisci la Password</h2>
-            <p class="text-gray-600 mb-6">Questo itinerario è protetto e condiviso.</p>
+            <p id="password-subtitle" class="text-gray-600 mb-6">Questo itinerario è protetto.</p>
             <form id="password-form">
                 <input type="password" id="password-input" class="w-full px-4 py-2 border rounded-lg text-center focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="••••••••">
                 <p id="password-error" class="text-red-500 text-sm mt-2 hidden">Password errata. Riprova.</p>
@@ -136,8 +136,8 @@
     <!-- Main App Container (initially hidden) -->
     <div id="app-container" class="container mx-auto p-4 sm:p-6 lg:p-8 hidden">
         <header class="text-center mb-10">
-            <h1 class="text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-sky-500">
-                Editor Itinerario di Viaggio (Condiviso)
+            <h1 id="main-header" class="text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-sky-500">
+                Editor Itinerario di Viaggio
             </h1>
             <div class="mt-8 max-w-3xl mx-auto">
                 <input type="text" id="main-title" value="Viaggio a Hong Kong, Macao e Filippine" class="text-2xl md:text-3xl font-bold text-center border-0 border-b-2 border-gray-300 focus:ring-0 focus:border-indigo-500 bg-transparent py-2 placeholder-gray-400">
@@ -167,8 +167,8 @@
         
         <!-- Controls -->
         <div class="flex flex-wrap justify-center items-center gap-4 mb-8">
-            <!-- Il bottone di salvataggio non è più necessario, il salvataggio è automatico -->
-            <span id="save-status" class="text-green-600 font-medium opacity-0 px-6 py-2 bg-green-100 border border-green-300 rounded-lg">Salvataggio automatico attivo...</span>
+            <button id="save-btn" class="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors hidden">Salva Modifiche</button>
+            <span id="save-status" class="text-green-600 font-medium opacity-0 px-6 py-2 bg-green-100 border border-green-300 rounded-lg"></span>
             <button id="pdf-btn" class="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-colors">Salva come PDF</button>
             <button id="reset-btn" class="px-6 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 transition-colors">Reset Itinerario</button>
             <label for="edit-images-toggle" class="flex items-center gap-2 cursor-pointer px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-300">
@@ -201,21 +201,22 @@
     </div>
 
     <script type="module">
-        // --- INIZIALIZZAZIONE FIREBASE ---
+        // --- INIZIALIZZAZIONE FIREBASE (se disponibile) ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURAZIONE ---
         const CORRECT_PASSWORD = 'Filippine2026'; // La password per accedere
 
-        // Variabili globali per Firebase
+        // --- VARIABILI GLOBALI ---
         let db;
         let auth;
         let itineraryDocRef;
-        let unsubscribeFromItinerary; // Funzione per smettere di ascoltare le modifiche
-        let isSaving = false; // Flag per evitare salvataggi concorrenti
-        let saveTimeout; // Timeout per raggruppare i salvataggi
+        let unsubscribeFromItinerary; 
+        let isFirebaseMode = false; // Flag per la modalità di funzionamento
+        let isSaving = false;
+        let saveTimeout;
 
         // --- DATI DI DEFAULT ---
         const defaultFlightsData = [
@@ -253,109 +254,112 @@
         // --- GITHUB MODAL STATE ---
         let currentImageTargetId = null;
 
-        // --- FUNZIONI FIRESTORE ---
-        function triggerSave() {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(saveItinerary, 1000); // Salva 1 secondo dopo l'ultima modifica
+        // --- FUNZIONI DI GESTIONE DATI (Ibride) ---
+
+        function buildDataObjectFromDOM() {
+            const data = {
+                main: {
+                    title: document.getElementById('main-title').value,
+                    image: document.getElementById('main-image-preview').src,
+                },
+                flights: [],
+                itinerary: [],
+            };
+
+            document.querySelectorAll('#flights-container .flight-card').forEach(card => {
+                const idPrefix = card.dataset.idprefix;
+                data.flights.push({
+                    idPrefix: idPrefix,
+                    title: card.querySelector('h3').textContent.replace('✈️ ', ''),
+                    depAirport: document.getElementById(`${idPrefix}-dep-airport`).value,
+                    arrAirport: document.getElementById(`${idPrefix}-arr-airport`).value,
+                    depTime: document.getElementById(`${idPrefix}-dep-time`).value,
+                    arrTime: document.getElementById(`${idPrefix}-arr-time`).value,
+                    depTz: document.getElementById(`${idPrefix}-dep-tz`).value,
+                    arrTz: document.getElementById(`${idPrefix}-arr-tz`).value,
+                });
+            });
+
+            document.querySelectorAll('#itinerary-container .day-card-wrapper').forEach((card, index) => {
+                const dayId = `day${index + 1}`;
+                data.itinerary.push({
+                    date: document.getElementById(`${dayId}-date`).value,
+                    location: document.getElementById(`${dayId}-location`).value,
+                    isFlight: document.getElementById(`${dayId}-flight-check`).checked,
+                    isCruise: document.getElementById(`${dayId}-cruise-check`).checked,
+                    accommodation: document.getElementById(`${dayId}-accommodation`).value,
+                    activities: document.getElementById(`${dayId}-activities`).value,
+                    image: document.getElementById(`${dayId}-image-preview`).src,
+                });
+            });
+            return data;
         }
 
-        async function saveItinerary() {
-            if (!itineraryDocRef || isSaving) {
-                return;
-            }
-            isSaving = true;
-            
+        // --- Funzioni specifiche per LOCALSTORAGE ---
+        function saveItineraryToLocal() {
             try {
-                const dataToSave = {
-                    main: {
-                        title: document.getElementById('main-title').value,
-                        image: document.getElementById('main-image-preview').src,
-                    },
-                    flights: [],
-                    itinerary: [],
-                    lastUpdated: serverTimestamp()
-                };
-
-                document.querySelectorAll('#flights-container .flight-card').forEach(card => {
-                    const idPrefix = card.dataset.idprefix;
-                    dataToSave.flights.push({
-                        idPrefix: idPrefix,
-                        title: card.querySelector('h3').textContent.replace('✈️ ', ''),
-                        depAirport: document.getElementById(`${idPrefix}-dep-airport`).value,
-                        arrAirport: document.getElementById(`${idPrefix}-arr-airport`).value,
-                        depTime: document.getElementById(`${idPrefix}-dep-time`).value,
-                        arrTime: document.getElementById(`${idPrefix}-arr-time`).value,
-                        depTz: document.getElementById(`${idPrefix}-dep-tz`).value,
-                        arrTz: document.getElementById(`${idPrefix}-arr-tz`).value,
-                    });
-                });
-
-                document.querySelectorAll('#itinerary-container .day-card-wrapper').forEach((card, index) => {
-                    const dayId = `day${index + 1}`;
-                    dataToSave.itinerary.push({
-                        date: document.getElementById(`${dayId}-date`).value,
-                        location: document.getElementById(`${dayId}-location`).value,
-                        isFlight: document.getElementById(`${dayId}-flight-check`).checked,
-                        isCruise: document.getElementById(`${dayId}-cruise-check`).checked,
-                        accommodation: document.getElementById(`${dayId}-accommodation`).value,
-                        activities: document.getElementById(`${dayId}-activities`).value,
-                        image: document.getElementById(`${dayId}-image-preview`).src,
-                    });
-                });
+                const dataToSave = buildDataObjectFromDOM();
+                localStorage.setItem('travelItineraryData', JSON.stringify(dataToSave));
                 
+                const status = document.getElementById('save-status');
+                status.textContent = 'Modifiche salvate!';
+                status.classList.remove('opacity-0');
+                setTimeout(() => status.classList.add('opacity-0'), 2000);
+            } catch (e) {
+                console.error("Error saving to localStorage", e);
+                alert("Errore durante il salvataggio locale.");
+            }
+        }
+
+        function loadItineraryFromLocal() {
+            const savedData = localStorage.getItem('travelItineraryData');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                return {
+                    main: data.main || defaultMainData,
+                    flights: data.flights || defaultFlightsData,
+                    itinerary: data.itinerary || defaultItineraryData
+                };
+            }
+            return { main: defaultMainData, flights: defaultFlightsData, itinerary: defaultItineraryData };
+        }
+
+        function resetItineraryLocal() {
+            if (window.confirm("Sei sicuro di voler cancellare le modifiche locali? L'operazione non è reversibile.")) {
+                localStorage.removeItem('travelItineraryData');
+                location.reload();
+            }
+        }
+
+        // --- Funzioni specifiche per FIREBASE ---
+        function triggerSaveToFirebase() {
+            if (!isFirebaseMode) return;
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveItineraryToFirebase, 1000);
+        }
+
+        async function saveItineraryToFirebase() {
+            if (!itineraryDocRef || isSaving) return;
+            isSaving = true;
+            try {
+                const dataToSave = buildDataObjectFromDOM();
+                dataToSave.lastUpdated = serverTimestamp();
                 await setDoc(itineraryDocRef, dataToSave, { merge: true });
                 
                 const status = document.getElementById('save-status');
                 status.textContent = 'Modifiche salvate!';
                 status.classList.remove('opacity-0');
                 setTimeout(() => status.classList.add('opacity-0'), 2500);
-
             } catch (e) {
                 console.error("Errore nel salvataggio su Firestore", e);
-                const status = document.getElementById('save-status');
-                status.textContent = 'Errore di salvataggio!';
-                status.style.color = 'red';
-                status.classList.remove('opacity-0');
             } finally {
                 isSaving = false;
             }
         }
-
-        function listenForItineraryUpdates() {
-            const status = document.getElementById('save-status');
-            status.textContent = 'Connesso. Sincronizzazione in corso...';
-            status.classList.remove('opacity-0');
-
-            if (unsubscribeFromItinerary) unsubscribeFromItinerary();
-
-            unsubscribeFromItinerary = onSnapshot(itineraryDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    const fullData = {
-                        main: data.main || defaultMainData,
-                        flights: data.flights || defaultFlightsData,
-                        itinerary: data.itinerary || defaultItineraryData
-                    };
-                    renderApp(fullData);
-                } else {
-                    console.log("Documento non trovato. Creo un nuovo itinerario con i dati di default.");
-                    resetItinerary(false); // Resetta senza chiedere conferma
-                }
-                setTimeout(() => status.classList.add('opacity-0'), 2500);
-            }, (error) => {
-                console.error("Errore di connessione a Firestore:", error);
-                status.textContent = 'Errore di connessione!';
-                status.style.color = 'red';
-            });
-        }
-
-        async function resetItinerary(confirm = true) {
-            const doReset = confirm ? window.confirm("Sei sicuro di voler cancellare tutte le modifiche per tutti gli utenti? L'operazione non è reversibile.") : true;
-            if (doReset) {
-                if (!itineraryDocRef) {
-                    console.error("Riferimento a Firestore non pronto per il reset.");
-                    return;
-                }
+        
+        async function resetItineraryFirebase() {
+            if (window.confirm("Sei sicuro di voler cancellare tutte le modifiche per TUTTI gli utenti? L'operazione non è reversibile.")) {
+                if (!itineraryDocRef) return;
                 try {
                     const defaultData = {
                         main: defaultMainData,
@@ -364,10 +368,34 @@
                         lastUpdated: serverTimestamp()
                     };
                     await setDoc(itineraryDocRef, defaultData);
-                    console.log("Itinerario resettato su Firestore.");
                 } catch (error) {
                     console.error("Errore nel resettare l'itinerario:", error);
                 }
+            }
+        }
+
+        function listenForItineraryUpdates() {
+            if (unsubscribeFromItinerary) unsubscribeFromItinerary();
+            unsubscribeFromItinerary = onSnapshot(itineraryDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    renderApp({
+                        main: data.main || defaultMainData,
+                        flights: data.flights || defaultFlightsData,
+                        itinerary: data.itinerary || defaultItineraryData
+                    });
+                } else {
+                    resetItineraryFirebase(false); // Crea il documento se non esiste
+                }
+            });
+        }
+        
+        // --- Funzione generica di RESET ---
+        function resetData() {
+            if (isFirebaseMode) {
+                resetItineraryFirebase();
+            } else {
+                resetItineraryLocal();
             }
         }
 
@@ -469,10 +497,9 @@
                 pdfBtn.disabled = false;
             }
         }
-        
-        // --- RENDER FUNCTIONS (invariate, ma ora chiamate da Firestore) ---
+
+        // --- RENDER FUNCTIONS ---
         function renderApp(data) {
-            // Rimuove i vecchi event listener per evitare duplicazioni
             const oldContent = document.getElementById('main-content');
             const newContent = oldContent.cloneNode(true);
             oldContent.parentNode.replaceChild(newContent, oldContent);
@@ -495,7 +522,7 @@
             createDetailedItinerary(data.itinerary);
             createFlightsList(data.flights);
             updateCalendar();
-            setupDynamicEventListeners(); // Usa una funzione separata per gli listener dinamici
+            setupDynamicEventListeners();
         }
 
         function updateCalendar() {
@@ -543,7 +570,6 @@
                         </div>
                         <div class="w-full md:w-1/2 relative">
                             <img id="${dayId}-image-preview" class="object-cover w-full h-full rounded-lg ${hasImage ? '' : 'hidden'}" src="${hasImage ? item.image : ''}" alt="Anteprima"/>
-                            
                             <div id="${dayId}-image-placeholder" class="image-placeholder w-full h-full bg-slate-200 rounded-lg items-center justify-center border-2 border-dashed border-gray-400 hover:bg-slate-300 transition-colors ${hasImage ? 'hidden' : 'flex'}">
                                  <div class="text-center text-gray-600">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
@@ -554,14 +580,12 @@
                                     </div>
                                 </div>
                             </div>
-
                             <div id="${dayId}-image-change-overlay" class="image-change-overlay absolute inset-0 transition-all flex items-center justify-center hidden">
                                 <div class="flex justify-center gap-4">
                                     <label for="${dayId}-image-input" class="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 text-sm">Cambia File</label>
                                     <button class="github-open-btn px-4 py-2 bg-gray-800 text-white rounded-lg shadow-sm hover:bg-gray-900 text-sm" data-target-id="${dayId}">da GitHub</button>
                                 </div>
                             </div>
-
                             <input type="file" id="${dayId}-image-input" class="hidden" accept="image/*">
                         </div>
                     </div>`;
@@ -625,7 +649,6 @@
                 const previewId = overlay.id.replace('-image-change-overlay', '-image-preview');
                 const previewImage = document.getElementById(previewId);
                 const hasImage = previewImage && !previewImage.classList.contains('hidden');
-                
                 if (hasImage) {
                     overlay.classList.toggle('hidden', !show);
                 }
@@ -658,7 +681,9 @@
             const isEditMode = document.getElementById('edit-images-toggle').checked;
             if (changeOverlay) changeOverlay.classList.toggle('hidden', !isEditMode);
             
-            triggerSave();
+            if (isFirebaseMode) {
+                triggerSaveToFirebase();
+            }
         }
 
         // --- GITHUB MODAL FUNCTIONS ---
@@ -731,69 +756,60 @@
         }
 
         function setupStaticEventListeners() {
-            document.getElementById('reset-btn').addEventListener('click', () => resetItinerary(true));
+            document.getElementById('reset-btn').addEventListener('click', resetData);
             document.getElementById('pdf-btn').addEventListener('click', saveAsPDF);
+            document.getElementById('save-btn').addEventListener('click', saveItineraryToLocal);
             
             const itineraryBtn = document.getElementById('tab-btn-itinerary');
             const flightsBtn = document.getElementById('tab-btn-flights');
-            const itineraryContent = document.getElementById('itinerary-content');
-            const flightsContent = document.getElementById('flights-content');
-
-            itineraryBtn.addEventListener('click', () => { itineraryContent.classList.remove('hidden'); flightsContent.classList.add('hidden'); itineraryBtn.classList.add('active'); flightsBtn.classList.remove('active'); });
-            flightsBtn.addEventListener('click', () => { itineraryContent.classList.add('hidden'); flightsContent.classList.remove('hidden'); itineraryBtn.classList.remove('active'); flightsBtn.classList.add('active'); });
+            itineraryBtn.addEventListener('click', () => { document.getElementById('itinerary-content').classList.remove('hidden'); document.getElementById('flights-content').classList.add('hidden'); itineraryBtn.classList.add('active'); flightsBtn.classList.remove('active'); });
+            flightsBtn.addEventListener('click', () => { document.getElementById('itinerary-content').classList.add('hidden'); document.getElementById('flights-content').classList.remove('hidden'); itineraryBtn.classList.remove('active'); flightsBtn.classList.add('active'); });
             
             document.getElementById('fetch-github-images-btn').addEventListener('click', fetchGitHubImages);
             document.getElementById('close-github-modal-btn').addEventListener('click', closeGitHubModal);
             
-            document.getElementById('edit-images-toggle').addEventListener('change', (e) => {
-                toggleImageOverlays(e.target.checked);
-            });
+            document.getElementById('edit-images-toggle').addEventListener('change', (e) => toggleImageOverlays(e.target.checked));
         }
 
         function setupDynamicEventListeners() {
-            document.getElementById('main-title').addEventListener('input', triggerSave);
+            document.getElementById('main-title').addEventListener('input', triggerSaveToFirebase);
             document.getElementById('main-image-input').addEventListener('change', handleImageUpload);
 
             document.querySelectorAll('#flights-container input').forEach(el => el.addEventListener('input', () => {
                 calculateDuration(el.closest('.flight-card').dataset.idprefix + '-dep-time', el.closest('.flight-card').dataset.idprefix + '-arr-time', el.closest('.flight-card').dataset.idprefix + '-dep-tz', el.closest('.flight-card').dataset.idprefix + '-arr-tz', el.closest('.flight-card').dataset.idprefix + '-duration');
-                triggerSave();
+                triggerSaveToFirebase();
             }));
             document.querySelectorAll('.flight-card').forEach(card => calculateDuration(card.dataset.idprefix + '-dep-time', card.dataset.idprefix + '-arr-time', card.dataset.idprefix + '-dep-tz', card.dataset.idprefix + '-arr-tz', card.dataset.idprefix + '-duration'));
 
             document.querySelectorAll('input[type="file"][id^="day"]').forEach(input => input.addEventListener('change', handleImageUpload));
-            document.querySelectorAll('textarea[id$="-activities"]').forEach(textarea => { autoGrowTextarea(textarea); textarea.addEventListener('input', () => { autoGrowTextarea(textarea); triggerSave(); }); });
+            document.querySelectorAll('textarea[id$="-activities"]').forEach(textarea => { autoGrowTextarea(textarea); textarea.addEventListener('input', () => { autoGrowTextarea(textarea); triggerSaveToFirebase(); }); });
             
             document.getElementById('itinerary-container').addEventListener('input', (event) => {
                 if (event.target.matches('input, textarea')) {
                     if (event.target.matches('input[id$="-location"], input[id$="-date"], input[type="checkbox"]')) {
                         updateCalendar();
                     }
-                    triggerSave();
+                    triggerSaveToFirebase();
                 }
             });
 
             document.body.addEventListener('click', (e) => {
                 if (e.target.classList.contains('github-open-btn')) {
-                    const targetId = e.target.dataset.targetId;
-                    openGitHubModal(targetId);
+                    openGitHubModal(e.target.dataset.targetId);
                 }
             });
             
             toggleImageOverlays(document.getElementById('edit-images-toggle').checked);
         }
 
-        // --- PASSWORD & INITIALIZATION ---
+        // --- INIZIALIZZAZIONE E LOGICA DI AVVIO ---
         function showApp() {
-            const appContainer = document.getElementById('app-container');
-            const passwordOverlay = document.getElementById('password-overlay');
-            
-            appContainer.classList.remove('hidden');
-            passwordOverlay.classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('password-overlay').classList.add('hidden');
         }
 
-        async function initializeFirebaseAndStart() {
+        async function initializeFirebaseApp() {
             try {
-                // Queste variabili sono fornite dall'ambiente di esecuzione
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-travel-app';
                 const firebaseConfig = JSON.parse(__firebase_config);
 
@@ -801,17 +817,13 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                // Crea un percorso univoco per il documento di questo itinerario
                 const docId = `itinerary-${appId}`;
                 itineraryDocRef = doc(db, "artifacts", appId, "public/data/itineraries", docId);
 
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
-                        console.log("Utente autenticato:", user.uid);
                         listenForItineraryUpdates();
                         showApp();
-                    } else {
-                        console.log("Nessun utente, tento il login...");
                     }
                 });
 
@@ -822,38 +834,65 @@
                         await signInAnonymously(auth);
                     }
                 }
-
             } catch (error) {
-                 console.error("Errore fatale nell'inizializzazione di Firebase:", error);
-                 document.body.innerHTML = `<div class="text-center p-8 text-red-500">Errore di configurazione. Impossibile caricare l'applicazione. Controlla la console per i dettagli.</div>`;
+                 console.error("Errore nell'inizializzazione di Firebase:", error);
+                 document.body.innerHTML = `<div class="text-center p-8 text-red-500">Errore di configurazione Firebase. L'app non può avviarsi in modalità condivisa.</div>`;
             }
         }
 
-        function setupPasswordCheck() {
-            if (sessionStorage.getItem('isAuthenticated') === 'true') {
-                initializeFirebaseAndStart();
-                return;
-            }
-            
-            document.getElementById('password-overlay').classList.remove('hidden');
-            const passwordForm = document.getElementById('password-form');
-            const passwordInput = document.getElementById('password-input');
-            const passwordError = document.getElementById('password-error');
+        function initializeLocalApp() {
+            showApp();
+            const appData = loadItineraryFromLocal();
+            renderApp(appData);
+        }
 
+        function setupPasswordCheck() {
+            const passwordForm = document.getElementById('password-form');
             passwordForm.addEventListener('submit', (e) => {
                 e.preventDefault();
+                const passwordInput = document.getElementById('password-input');
                 if (passwordInput.value === CORRECT_PASSWORD) {
                     sessionStorage.setItem('isAuthenticated', 'true');
-                    initializeFirebaseAndStart();
+                    if (isFirebaseMode) {
+                        initializeFirebaseApp();
+                    } else {
+                        initializeLocalApp();
+                    }
                 } else {
-                    passwordError.classList.remove('hidden');
+                    document.getElementById('password-error').classList.remove('hidden');
                     passwordInput.value = '';
                     passwordInput.focus();
                 }
             });
+            
+            // Se già autenticato in questa sessione, avvia direttamente
+            if (sessionStorage.getItem('isAuthenticated') === 'true') {
+                if (isFirebaseMode) {
+                    initializeFirebaseApp();
+                } else {
+                    initializeLocalApp();
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Controlla se le variabili di configurazione Firebase sono presenti
+            if (typeof __firebase_config !== 'undefined' && __firebase_config && __firebase_config !== 'undefined') {
+                isFirebaseMode = true;
+                document.getElementById('main-header').textContent = 'Editor Itinerario (Condiviso)';
+                document.getElementById('password-subtitle').textContent = 'Questo itinerario è protetto e condiviso in tempo reale.';
+                document.getElementById('save-status').textContent = 'Salvataggio automatico attivo...';
+                document.getElementById('save-btn').classList.add('hidden');
+                document.getElementById('save-status').classList.remove('hidden');
+            } else {
+                isFirebaseMode = false;
+                console.log("Firebase non configurato. Avvio in modalità locale.");
+                document.getElementById('main-header').textContent = 'Editor Itinerario (Locale)';
+                document.getElementById('password-subtitle').textContent = 'Le modifiche verranno salvate solo su questo computer.';
+                document.getElementById('save-status').classList.add('hidden');
+                document.getElementById('save-btn').classList.remove('hidden');
+            }
+            
             setupPasswordCheck();
             setupStaticEventListeners();
         });
