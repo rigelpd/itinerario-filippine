@@ -342,7 +342,15 @@
             createDetailedItinerary(data.itinerary);
             createFlightsList(data.flights);
             updateCalendar();
-            
+            runPostRenderTasks();
+        }
+
+        function runPostRenderTasks() {
+            document.querySelectorAll('.flight-card').forEach(card => {
+                const idPrefix = card.dataset.idprefix;
+                calculateDuration(`${idPrefix}-dep-time`, `${idPrefix}-arr-time`, `${idPrefix}-dep-tz`, `${idPrefix}-arr-tz`, `${idPrefix}-duration`);
+            });
+            document.querySelectorAll('textarea[id$="-activities"]').forEach(autoGrowTextarea);
             const isEditMode = document.getElementById('edit-images-toggle').checked;
             toggleImageOverlays(isEditMode);
         }
@@ -570,7 +578,7 @@
             closeGitHubModal();
         }
 
-        function setupEventListeners() {
+        function initializeEventListeners() {
             document.getElementById('save-btn').addEventListener('click', saveDataToFirestore);
             document.getElementById('reset-btn').addEventListener('click', resetItinerary);
             document.getElementById('pdf-btn').addEventListener('click', saveAsPDF);
@@ -614,13 +622,19 @@
                 }
             });
 
-            document.getElementById('main-content').addEventListener('input', (event) => {
-                if (event.target.matches('input, textarea')) {
+            const appContainer = document.getElementById('app-container');
+            appContainer.addEventListener('input', (event) => {
+                if (event.target.matches('#main-content input, #main-content textarea, #main-title')) {
                     if (event.target.matches('input[id$="-location"], input[id$="-date"], input[type="checkbox"]')) {
                         updateCalendar();
                     }
                      if (event.target.matches('textarea[id$="-activities"]')) {
                         autoGrowTextarea(event.target);
+                    }
+                    const flightCard = event.target.closest('.flight-card');
+                    if (flightCard) {
+                        const idPrefix = flightCard.dataset.idprefix;
+                        calculateDuration(`${idPrefix}-dep-time`, `${idPrefix}-arr-time`, `${idPrefix}-dep-tz`, `${idPrefix}-arr-tz`, `${idPrefix}-duration`);
                     }
                 }
             });
@@ -634,11 +648,9 @@
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             const auth = getAuth(app);
-
-            // Render with default data first to avoid blank page
+            
+            initializeEventListeners();
             renderApp(defaultData);
-            // Setup listeners once
-            setupEventListeners();
 
             try {
                 if (typeof __initial_auth_token !== 'undefined') {
