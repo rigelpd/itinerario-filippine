@@ -636,7 +636,7 @@ if (placeholder) placeholder.classList.add('hidden');
                 }
                 console.log("Autenticazione Firebase riuscita.");
 
-                itineraryDocRef = doc(db, "artifacts", appId, "public/data/itinerary");
+                itineraryDocRef = doc(db, "artifacts", appId, "public/data", "itinerary", "main");
                 listenForDataChanges();
 
             } catch (error) {
