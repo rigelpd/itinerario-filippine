@@ -97,6 +97,9 @@
             transform: scale(1.05);
             box-shadow: 0 0 15px rgba(99, 102, 241, 0.5); /* shadow-indigo-500/50 */
         }
+        .image-change-overlay {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
     </style>
 </head>
 <body class="text-gray-800">
@@ -140,7 +143,8 @@
             <div class="mt-8 max-w-3xl mx-auto">
                 <input type="text" id="main-title" value="Viaggio a Hong Kong, Macao e Filippine" class="text-2xl md:text-3xl font-bold text-center border-0 border-b-2 border-gray-300 focus:ring-0 focus:border-indigo-500 bg-transparent py-2 placeholder-gray-400">
             </div>
-            <div class="mt-6 max-w-4xl mx-auto">
+            <div class="mt-6 max-w-4xl mx-auto relative">
+                <img id="main-image-preview" class="hidden w-full h-64 object-cover rounded-lg shadow-lg" src="" alt="Immagine di copertina"/>
                 <div id="main-image-placeholder" class="w-full h-64 bg-slate-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-400 hover:bg-slate-300 transition-colors">
                     <div class="text-center text-gray-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l-1.586-1.586a2 2 0 00-2.828 0L6 14m6-6v12" /></svg>
@@ -151,16 +155,26 @@
                         </div>
                     </div>
                 </div>
-                <img id="main-image-preview" class="hidden w-full h-64 object-cover rounded-lg shadow-lg" src="" alt="Immagine di copertina"/>
+                 <!-- Overlay per cambiare l'immagine -->
+                <div id="main-image-change-overlay" class="image-change-overlay absolute inset-0 transition-all flex items-center justify-center hidden">
+                    <div class="flex justify-center gap-4">
+                        <label for="main-image-input" class="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50">Cambia File</label>
+                        <button class="github-open-btn px-4 py-2 bg-gray-800 text-white rounded-lg shadow-sm hover:bg-gray-900" data-target-id="main">da GitHub</button>
+                    </div>
+                </div>
                 <input type="file" id="main-image-input" class="hidden" accept="image/*">
             </div>
         </header>
         
         <!-- Controls -->
-        <div class="flex justify-center items-center gap-4 mb-8">
+        <div class="flex flex-wrap justify-center items-center gap-4 mb-8">
             <button id="save-btn" class="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg shadow-md hover:bg-green-600 transition-colors">Salva Modifiche</button>
             <button id="pdf-btn" class="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 transition-colors">Salva come PDF</button>
             <button id="reset-btn" class="px-6 py-2 bg-red-500 text-white font-semibold rounded-lg shadow-md hover:bg-red-600 transition-colors">Reset Itinerario</button>
+            <label for="edit-images-toggle" class="flex items-center gap-2 cursor-pointer px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-300">
+                <input type="checkbox" id="edit-images-toggle" class="w-5 h-5 rounded text-indigo-600 focus:ring-indigo-500">
+                <span>Cambia Immagini</span>
+            </label>
             <span id="save-status" class="text-green-600 font-medium opacity-0">Modifiche salvate!</span>
         </div>
 
@@ -274,7 +288,6 @@
 
             } catch (e) {
                 console.error("Error saving to localStorage", e);
-                // Non usare alert, potrebbe essere bloccato
             }
         }
 
@@ -292,10 +305,9 @@
         }
 
         function resetItinerary() {
-            // Sostituisci confirm con una modale personalizzata se possibile
             if (window.confirm("Sei sicuro di voler cancellare tutte le modifiche? L'operazione non è reversibile.")) {
                 localStorage.removeItem('travelItineraryData');
-                sessionStorage.removeItem('isAuthenticated'); // Rimuove anche l'autenticazione
+                sessionStorage.removeItem('isAuthenticated');
                 location.reload();
             }
         }
@@ -335,7 +347,7 @@
                         img.remove();
                     }
                 });
-                clone.querySelectorAll('.image-placeholder, button, input[type="file"], .github-open-btn').forEach(el => el.remove());
+                clone.querySelectorAll('.image-placeholder, button, input[type="file"], .github-open-btn, .image-change-overlay, #edit-images-toggle, label[for="edit-images-toggle"]').forEach(el => el.remove());
                 clone.querySelectorAll('input[type="text"], input[type="date"], input[type="datetime-local"], textarea').forEach(el => {
                     const p = document.createElement('p');
                     let value = el.value;
@@ -392,7 +404,6 @@
                 pdf.save(`itinerario_${title}.pdf`);
             } catch (error) {
                 console.error("Error generating PDF:", error);
-                // Non usare alert
             } finally {
                 document.body.removeChild(printContainer);
                 pdfBtn.textContent = 'Salva come PDF';
@@ -404,11 +415,18 @@
         function renderApp(data) {
             document.getElementById('main-title').value = data.main.title;
             const mainImgPreview = document.getElementById('main-image-preview');
-            if (data.main.image && (data.main.image.startsWith('data:image') || data.main.image.startsWith('http'))) {
+            const mainImgPlaceholder = document.getElementById('main-image-placeholder');
+            
+            const hasMainImage = data.main.image && (data.main.image.startsWith('data:image') || data.main.image.startsWith('http'));
+            if (hasMainImage) {
                 mainImgPreview.src = data.main.image;
                 mainImgPreview.classList.remove('hidden');
-                document.getElementById('main-image-placeholder').classList.add('hidden');
+                mainImgPlaceholder.classList.add('hidden');
+            } else {
+                mainImgPreview.classList.add('hidden');
+                mainImgPlaceholder.classList.remove('hidden');
             }
+
             createDetailedItinerary(data.itinerary);
             createFlightsList(data.flights);
             updateCalendar();
@@ -458,8 +476,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="w-full md:w-1/2">
-                            <div id="${dayId}-image-placeholder" class="image-placeholder w-full h-full bg-slate-200 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-400 hover:bg-slate-300 transition-colors ${hasImage ? 'hidden' : ''}">
+                        <div class="w-full md:w-1/2 relative">
+                            <img id="${dayId}-image-preview" class="object-cover w-full h-full rounded-lg ${hasImage ? '' : 'hidden'}" src="${item.image}" alt="Anteprima"/>
+                            
+                            <div id="${dayId}-image-placeholder" class="image-placeholder w-full h-full bg-slate-200 rounded-lg items-center justify-center border-2 border-dashed border-gray-400 hover:bg-slate-300 transition-colors ${hasImage ? 'hidden' : 'flex'}">
                                  <div class="text-center text-gray-600">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                                     <p class="font-semibold mb-3">Aggiungi immagine</p>
@@ -469,7 +489,14 @@
                                     </div>
                                 </div>
                             </div>
-                            <img id="${dayId}-image-preview" class="object-cover w-full h-full rounded-lg ${hasImage ? '' : 'hidden'}" src="${item.image}" alt="Anteprima"/>
+
+                            <div id="${dayId}-image-change-overlay" class="image-change-overlay absolute inset-0 transition-all flex items-center justify-center hidden">
+                                <div class="flex justify-center gap-4">
+                                    <label for="${dayId}-image-input" class="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 text-sm">Cambia File</label>
+                                    <button class="github-open-btn px-4 py-2 bg-gray-800 text-white rounded-lg shadow-sm hover:bg-gray-900 text-sm" data-target-id="${dayId}">da GitHub</button>
+                                </div>
+                            </div>
+
                             <input type="file" id="${dayId}-image-input" class="hidden" accept="image/*">
                         </div>
                     </div>`;
@@ -528,11 +555,24 @@
             });
         }
 
+        function toggleImageOverlays(show) {
+            document.querySelectorAll('.image-change-overlay').forEach(overlay => {
+                const previewId = overlay.id.replace('-image-change-overlay', '-image-preview');
+                const previewImage = document.getElementById(previewId);
+                const hasImage = previewImage && !previewImage.classList.contains('hidden');
+                
+                if (hasImage) {
+                    overlay.classList.toggle('hidden', !show);
+                }
+            });
+        }
+
         async function handleImageUpload(event) {
             const input = event.target;
             const idPrefix = input.id.replace('-image-input', '');
             const preview = document.getElementById(`${idPrefix}-image-preview`);
             const placeholder = document.getElementById(`${idPrefix}-image-placeholder`);
+            const changeOverlay = document.getElementById(`${idPrefix}-image-change-overlay`);
             const file = input.files[0];
             if (file) {
                 try {
@@ -540,6 +580,10 @@
                     preview.src = compressedDataUrl;
                     preview.classList.remove('hidden');
                     if (placeholder) placeholder.classList.add('hidden');
+                    
+                    const isEditMode = document.getElementById('edit-images-toggle').checked;
+                    if (changeOverlay) changeOverlay.classList.toggle('hidden', !isEditMode);
+
                     saveItinerary();
                 } catch (error) {
                     console.error("Error compressing image:", error);
@@ -619,10 +663,14 @@
             if (!currentImageTargetId) return;
             const preview = document.getElementById(`${currentImageTargetId}-image-preview`);
             const placeholder = document.getElementById(`${currentImageTargetId}-image-placeholder`);
+            const changeOverlay = document.getElementById(`${currentImageTargetId}-image-change-overlay`);
             
             preview.src = imageUrl;
             preview.classList.remove('hidden');
             if (placeholder) placeholder.classList.add('hidden');
+            
+            const isEditMode = document.getElementById('edit-images-toggle').checked;
+            if (changeOverlay) changeOverlay.classList.toggle('hidden', !isEditMode);
             
             saveItinerary();
             closeGitHubModal();
@@ -658,7 +706,7 @@
                 }
             });
 
-            // Event listeners per la modale GitHub
+            // Event listener per la modale GitHub
             document.getElementById('fetch-github-images-btn').addEventListener('click', fetchGitHubImages);
             document.getElementById('close-github-modal-btn').addEventListener('click', closeGitHubModal);
             document.body.addEventListener('click', (e) => {
@@ -666,6 +714,11 @@
                     const targetId = e.target.dataset.targetId;
                     openGitHubModal(targetId);
                 }
+            });
+
+            // Event listener per la spunta "Cambia Immagini"
+            document.getElementById('edit-images-toggle').addEventListener('change', (e) => {
+                toggleImageOverlays(e.target.checked);
             });
         }
 
