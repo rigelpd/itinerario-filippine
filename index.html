@@ -203,6 +203,7 @@
         const CORRECT_PASSWORD = 'Filippine2026';
         let db;
         let itineraryDocRef;
+        let isSaving = false; // Flag to prevent rapid saves
 
         // --- DATI DI DEFAULT ---
         const defaultMainData = { title: 'Viaggio a Hong Kong, Macao e Filippine', image: '' };
@@ -242,7 +243,11 @@
         let currentImageTargetId = null;
 
         // --- FUNZIONI FIRESTORE ---
-        async function saveDataToFirestore() {
+        function saveDataToFirestore() {
+            if (isSaving) return;
+            isSaving = true;
+            setTimeout(() => { isSaving = false; }, 1000); // Debounce
+
             try {
                 const dataToSave = {
                     main: {
@@ -280,7 +285,7 @@
                     });
                 });
                 
-                await setDoc(itineraryDocRef, dataToSave);
+                setDoc(itineraryDocRef, dataToSave);
                 
                 const status = document.getElementById('save-status');
                 status.textContent = 'Modifiche salvate online!';
@@ -337,7 +342,6 @@
             createDetailedItinerary(data.itinerary);
             createFlightsList(data.flights);
             updateCalendar();
-            setupEventListeners();
             
             const isEditMode = document.getElementById('edit-images-toggle').checked;
             toggleImageOverlays(isEditMode);
@@ -432,7 +436,7 @@
             });
         }
 
-        // --- FUNZIONI UTILITY E EVENT LISTENER ---
+        // --- FUNZIONI UTILITY ---
         function getTimezoneOffset(tzString) { tzString = tzString.toUpperCase(); if (tzString === 'CET') return 1; if (tzString.startsWith('GMT+')) return parseInt(tzString.replace('GMT+', ''), 10); if (tzString.startsWith('GMT-')) return -parseInt(tzString.replace('GMT-', ''), 10); return 0; }
         function formatOffset(offset) { const sign = offset >= 0 ? '+' : '-'; const absOffset = Math.abs(offset); const hours = String(Math.floor(absOffset)).padStart(2, '0'); const minutes = String((absOffset % 1) * 60).padStart(2, '0'); return `${sign}${hours}:${minutes}`; }
         function calculateDuration(depTimeId, arrTimeId, depTzId, arrTzId, durationElId) { const [depTimeInput, arrTimeInput, depTzInput, arrTzInput, durationEl] = [depTimeId, arrTimeId, depTzId, arrTzId, durationElId].map(id => document.getElementById(id)); if (depTimeInput && depTimeInput.value && arrTimeInput.value && depTzInput.value && arrTzInput.value) { const depOffset = getTimezoneOffset(depTzInput.value); const arrOffset = getTimezoneOffset(arrTzInput.value); const depDate = new Date(`${depTimeInput.value}:00${formatOffset(depOffset)}`); const arrDate = new Date(`${arrTimeInput.value}:00${formatOffset(arrOffset)}`); let diff = arrDate.getTime() - depDate.getTime(); if (diff < 0) { durationEl.textContent = "Arrivo prima della partenza."; durationEl.classList.add('text-red-500'); return; } durationEl.classList.remove('text-red-500'); const diffHours = Math.floor(diff / 3600000); const diffMinutes = Math.round((diff % 3600000) / 60000); durationEl.textContent = `Durata: ${diffHours}h ${diffMinutes}m`; } }
@@ -559,7 +563,7 @@
             
             preview.src = imageUrl;
             preview.classList.remove('hidden');
-if (placeholder) placeholder.classList.add('hidden');
+            if (placeholder) placeholder.classList.add('hidden');
             
             toggleImageOverlays(document.getElementById('edit-images-toggle').checked);
             saveDataToFirestore();
@@ -567,44 +571,36 @@ if (placeholder) placeholder.classList.add('hidden');
         }
 
         function setupEventListeners() {
-            // Rimuovi vecchi listener per evitare duplicazioni
-            const saveBtn = document.getElementById('save-btn');
-            const newSaveBtn = saveBtn.cloneNode(true);
-            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
-            newSaveBtn.addEventListener('click', saveDataToFirestore);
-            
-            const resetBtn = document.getElementById('reset-btn');
-            const newResetBtn = resetBtn.cloneNode(true);
-            resetBtn.parentNode.replaceChild(newResetBtn, resetBtn);
-            newResetBtn.addEventListener('click', resetItinerary);
-
+            document.getElementById('save-btn').addEventListener('click', saveDataToFirestore);
+            document.getElementById('reset-btn').addEventListener('click', resetItinerary);
             document.getElementById('pdf-btn').addEventListener('click', saveAsPDF);
-            document.getElementById('main-image-input').addEventListener('change', handleImageUpload);
             
             const itineraryBtn = document.getElementById('tab-btn-itinerary');
             const flightsBtn = document.getElementById('tab-btn-flights');
             const itineraryContent = document.getElementById('itinerary-content');
             const flightsContent = document.getElementById('flights-content');
 
-            itineraryBtn.addEventListener('click', () => { itineraryContent.classList.remove('hidden'); flightsContent.classList.add('hidden'); itineraryBtn.classList.add('active'); flightsBtn.classList.remove('active'); });
-            flightsBtn.addEventListener('click', () => { itineraryContent.classList.add('hidden'); flightsContent.classList.remove('hidden'); itineraryBtn.classList.remove('active'); flightsBtn.classList.add('active'); });
-
-            document.querySelectorAll('#flights-container input').forEach(el => el.addEventListener('change', () => calculateDuration(el.closest('.flight-card').dataset.idprefix + '-dep-time', el.closest('.flight-card').dataset.idprefix + '-arr-time', el.closest('.flight-card').dataset.idprefix + '-dep-tz', el.closest('.flight-card').dataset.idprefix + '-arr-tz', el.closest('.flight-card').dataset.idprefix + '-duration')));
-            document.querySelectorAll('.flight-card').forEach(card => calculateDuration(card.dataset.idprefix + '-dep-time', card.dataset.idprefix + '-arr-time', card.dataset.idprefix + '-dep-tz', card.dataset.idprefix + '-arr-tz', card.dataset.idprefix + '-duration'));
-
-            document.querySelectorAll('input[type="file"][id^="day"]').forEach(input => input.addEventListener('change', handleImageUpload));
-            document.querySelectorAll('textarea[id$="-activities"]').forEach(textarea => { autoGrowTextarea(textarea); textarea.addEventListener('input', () => autoGrowTextarea(textarea)); });
-            
-            document.getElementById('main-content').addEventListener('input', (event) => {
-                if (event.target.matches('input, textarea')) {
-                    if (event.target.matches('input[id$="-location"], input[id$="-date"], input[type="checkbox"]')) {
-                        updateCalendar();
-                    }
-                }
+            itineraryBtn.addEventListener('click', () => { 
+                itineraryContent.classList.remove('hidden'); 
+                flightsContent.classList.add('hidden'); 
+                itineraryBtn.classList.add('active'); 
+                flightsBtn.classList.remove('active'); 
+            });
+            flightsBtn.addEventListener('click', () => { 
+                itineraryContent.classList.add('hidden'); 
+                flightsContent.classList.remove('hidden'); 
+                itineraryBtn.classList.remove('active'); 
+                flightsBtn.classList.add('active'); 
             });
 
             document.getElementById('fetch-github-images-btn').addEventListener('click', fetchGitHubImages);
             document.getElementById('close-github-modal-btn').addEventListener('click', closeGitHubModal);
+            
+            document.getElementById('edit-images-toggle').addEventListener('change', (e) => {
+                toggleImageOverlays(e.target.checked);
+            });
+
+            // Event Delegation for dynamic content
             document.body.addEventListener('click', (e) => {
                 if (e.target.classList.contains('github-open-btn')) {
                     const targetId = e.target.dataset.targetId;
@@ -612,22 +608,37 @@ if (placeholder) placeholder.classList.add('hidden');
                 }
             });
 
-            document.getElementById('edit-images-toggle').addEventListener('change', (e) => {
-                toggleImageOverlays(e.target.checked);
+            document.body.addEventListener('change', (e) => {
+                 if (e.target.matches('input[type="file"]')) {
+                    handleImageUpload(e);
+                }
+            });
+
+            document.getElementById('main-content').addEventListener('input', (event) => {
+                if (event.target.matches('input, textarea')) {
+                    if (event.target.matches('input[id$="-location"], input[id$="-date"], input[type="checkbox"]')) {
+                        updateCalendar();
+                    }
+                     if (event.target.matches('textarea[id$="-activities"]')) {
+                        autoGrowTextarea(event.target);
+                    }
+                }
             });
         }
 
         // --- INIZIALIZZAZIONE ---
         async function startApp() {
-            // FIX: Render the default data first to avoid a blank page
-            renderApp(defaultData);
-
             const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             const firebaseConfig = JSON.parse(__firebase_config);
             
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             const auth = getAuth(app);
+
+            // Render with default data first to avoid blank page
+            renderApp(defaultData);
+            // Setup listeners once
+            setupEventListeners();
 
             try {
                 if (typeof __initial_auth_token !== 'undefined') {
@@ -637,9 +648,6 @@ if (placeholder) placeholder.classList.add('hidden');
                 }
                 console.log("Autenticazione Firebase riuscita.");
 
-                // FIX: Corrected the document path to have an even number of segments.
-                // The structure is collection/document/collection/document...
-                // We use 'itinerary-data' as the collection and 'main' as the document ID.
                 itineraryDocRef = doc(db, "artifacts", appId, "public/data", "itinerary-data", "main");
                 listenForDataChanges();
 
