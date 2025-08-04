@@ -417,13 +417,36 @@
         }
 
         function exportHTML() {
+            const appContainer = document.getElementById('app-container');
+            if (!appContainer) {
+                console.error("Export failed: app-container not found.");
+                return;
+            }
+
+            // 1. Get the latest data from the DOM
             const latestData = buildDataObjectFromDOM();
-            const currentHtml = document.documentElement.outerHTML;
             const newDataString = JSON.stringify(latestData, null, 2);
+
+            // 2. Temporarily hide the app container to reset to initial state for export
+            const wasHidden = appContainer.classList.contains('hidden');
+            if (!wasHidden) {
+                appContainer.classList.add('hidden');
+            }
+
+            // 3. Get the HTML
+            let currentHtml = document.documentElement.outerHTML;
+
+            // 4. Immediately restore the view for the user
+            if (!wasHidden) {
+                appContainer.classList.remove('hidden');
+            }
+
+            // 5. Inject the new data into the clean HTML string
             const placeholderRegex = /\/\*!JSON_DATA_PLACEHOLDER\*\/[\s\S]*?\/\*!JSON_DATA_PLACEHOLDER\*\//;
             const newHtml = currentHtml.replace(placeholderRegex, `/*!JSON_DATA_PLACEHOLDER*/${newDataString}/*!JSON_DATA_PLACEHOLDER*/`);
 
-            const blob = new Blob([newHtml], { type: 'text/html' });
+            // 6. Create and trigger the download
+            const blob = new Blob([newHtml], { type: 'text/html;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
