@@ -464,8 +464,8 @@
                 }
 
                 console.log("Caricamento dati da itinerary.json...");
-                // Fetch the external JSON file
-                const response = await fetch('itinerary.json');
+                // Fetch the external JSON file, adding a cache-busting parameter
+                const response = await fetch(`itinerary.json?v=${new Date().getTime()}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
