@@ -284,7 +284,7 @@
         "category": "flights",
         "person": "Leonardo",
         "status": "paid",
-        "onSplid": false
+        "onSplid": true
       },
       {
         "id": 1755857724273,
@@ -293,7 +293,7 @@
         "category": "flights",
         "person": "Leonardo",
         "status": "paid",
-        "onSplid": false
+        "onSplid": true
       },
       {
         "id": 1755857777194,
@@ -302,7 +302,7 @@
         "category": "flights",
         "person": "Margherita",
         "status": "paid",
-        "onSplid": false
+        "onSplid": true
       },
       {
         "id": 1755858270299,
@@ -311,7 +311,7 @@
         "category": "flights",
         "person": "Leonardo",
         "status": "paid",
-        "onSplid": false
+        "onSplid": true
       },
       {
         "id": 1755861414138,
@@ -370,7 +370,7 @@
         "category": "flights",
         "person": "Margherita",
         "status": "paid",
-        "onSplid": false
+        "onSplid": true
       }
     ]
   },
