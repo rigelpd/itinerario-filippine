@@ -59,6 +59,14 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
             z-index: 1; /* Assicura che la mappa sia sotto i modali */
         }
+        .leaflet-control-layers {
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 1px solid #ccc;
+        }
+        .leaflet-control-layers-base label {
+            font-weight: 500;
+        }
         @media print {
             body { background-color: white; }
             .no-print, .no-print * { display: none !important; }
@@ -291,14 +299,47 @@
             if (map) { map.remove(); map = null; }
             if (!document.getElementById('map')) return;
 
-            map = L.map('map').setView([36.2048, 138.2529], 5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            // 1. Definire i diversi strati di mappa (tile layers)
+            const streetMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                 subdomains: 'abcd',
                 maxZoom: 20
-            }).addTo(map);
+            });
 
-            markerGroup = L.layerGroup().addTo(map);
+            const satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+            });
+
+            const topoMap = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+	            maxZoom: 17,
+	            attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
+            });
+
+            // 2. Inizializzare la mappa con il layer di default
+            map = L.map('map', {
+                center: [36.2048, 138.2529],
+                zoom: 5,
+                layers: [streetMap] // Aggiungi il layer di default qui
+            });
+
+            // 3. Creare gli oggetti per il controllo dei layer
+            const baseMaps = {
+                "Stradale": streetMap,
+                "Satelittare": satelliteMap,
+                "Topografica": topoMap
+            };
+
+            markerGroup = L.layerGroup(); 
+
+            const overlayMaps = {
+                "Segnalini Viaggio": markerGroup
+            };
+
+            // 4. Aggiungere il controllo dei layer alla mappa
+            L.control.layers(baseMaps, overlayMaps).addTo(map);
+            
+            // Aggiungere i marker al markerGroup e poi il group alla mappa
+            markerGroup.addTo(map);
 
             const formatDateForPopup = (dateString) => {
                 const [_, month, day] = dateString.split('-');
@@ -327,7 +368,7 @@
                         entry.dates.set(item.date, item.date);
                     }
                     if (isAccommodation) {
-                        entry.isAccommodation = true; // Prioritize accommodation icon if present at this location
+                        entry.isAccommodation = true;
                     }
                 };
 
@@ -339,7 +380,6 @@
             const markersForBounds = [];
 
             const isInItaly = (lat, lng) => {
-                // Bounding box approssimativo per l'Italia
                 return lat > 36 && lat < 47 && lng > 6 && lng < 19;
             };
 
@@ -364,18 +404,15 @@
                 markerGroup.addLayer(marker);
                 allMarkers.push(marker);
 
-                // Aggiungi il marker per il calcolo dello zoom solo se non è in Italia
                 if (!isInItaly(loc.coords.lat, loc.coords.lng)) {
                     markersForBounds.push(marker);
                 }
             });
 
             if (markersForBounds.length > 0) {
-                // Usa i marker non italiani per definire lo zoom iniziale
                 const groupBounds = L.featureGroup(markersForBounds).getBounds();
                 map.fitBounds(groupBounds.pad(0.1));
             } else if (allMarkers.length > 0) {
-                // Fallback: se ci sono solo marker italiani (o nessun marker), visualizzali tutti
                 const groupBounds = L.featureGroup(allMarkers).getBounds();
                 map.fitBounds(groupBounds.pad(0.1));
             }
