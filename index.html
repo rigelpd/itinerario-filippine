@@ -457,27 +457,28 @@
 
         async function loadData() {
             try {
-                const savedData = localStorage.getItem(DATA_STORAGE_KEY);
-                if (savedData) {
-                    console.log("Dati caricati da localStorage.");
-                    return JSON.parse(savedData);
-                }
-
+                // MODIFICA: Tenta sempre di scaricare la versione più recente dal server.
                 console.log("Caricamento dati da itinerary.json...");
-                // MODIFICA: Aggiunto un parametro univoco per evitare la cache
                 const response = await fetch(`itinerary.json?v=${new Date().getTime()}`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const jsonData = await response.json();
                 console.log("Dati caricati con successo da itinerary.json.");
-                // Salva i dati scaricati nel localStorage per le sessioni future
+                // Salva i dati scaricati nel localStorage per l'uso offline.
                 localStorage.setItem(DATA_STORAGE_KEY, JSON.stringify(jsonData));
                 return jsonData;
 
             } catch (e) {
-                console.error("Errore nel caricamento dei dati, utilizzo i dati di default:", e);
-                // Non cancellare il localStorage qui, potrebbe contenere dati validi ma vecchi
+                console.error("Errore nel caricamento dei dati dal server:", e);
+                // FALLBACK: Se il download fallisce, prova a usare i dati salvati localmente.
+                const savedData = localStorage.getItem(DATA_STORAGE_KEY);
+                if (savedData) {
+                    console.log("Caricamento dal server fallito, utilizzo i dati da localStorage come fallback.");
+                    return JSON.parse(savedData);
+                }
+                // FALLBACK FINALE: Se non c'è nulla, usa i dati di default.
+                console.log("Nessun dato locale disponibile, utilizzo i dati di default.");
                 return JSON.parse(JSON.stringify(defaultFullData));
             }
         }
