@@ -58,12 +58,16 @@
   "itinerary": [
     {
       "date": "2026-02-27",
-      "location": "Partenza da Bologna ",
+      "location": "Bologna ",
       "isFlight": true,
       "isCruise": false,
       "accommodation": "Casa",
       "activities": "Partenza da Bologna alle 19:35, volo Turkish per Hong Kong.",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20195203.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20195203.png",
+      "location_coords": {
+        "lat": 44.494586,
+        "lng": 11.342505
+      }
     },
     {
       "date": "2026-02-28",
@@ -72,7 +76,15 @@
       "isCruise": false,
       "accommodation": "Lan Kwai Fong Hotel",
       "activities": "Arrivo con il volo alle 17:05. Andiamo in albergo e dormiamo",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20173425.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20173425.png",
+      "location_coords": {
+        "lat": 22.306144,
+        "lng": 114.1333
+      },
+      "accommodation_coords": {
+        "lat": 22.284615,
+        "lng": 114.153177
+      }
     },
     {
       "date": "2026-03-01",
@@ -81,7 +93,15 @@
       "isCruise": false,
       "accommodation": "Lan Kwai Fong Hotel",
       "activities": "Hong Kong tutto il giorno",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20173622.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20173622.png",
+      "location_coords": {
+        "lat": 22.306144,
+        "lng": 114.1333
+      },
+      "accommodation_coords": {
+        "lat": 22.284615,
+        "lng": 114.153177
+      }
     },
     {
       "date": "2026-03-02",
@@ -90,7 +110,15 @@
       "isCruise": false,
       "accommodation": "Lan Kwai Fong Hotel",
       "activities": "Macao e Hong Kong",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20181139.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20181139.png",
+      "location_coords": {
+        "lat": 22.306144,
+        "lng": 114.1333
+      },
+      "accommodation_coords": {
+        "lat": 22.284615,
+        "lng": 114.153177
+      }
     },
     {
       "date": "2026-03-03",
@@ -99,7 +127,15 @@
       "isCruise": false,
       "accommodation": "Sempre Premier Inn - MACTAN AIRPORT HOTEL",
       "activities": "Mattina e primo pomeriggio ad Hong Kong, volo diretto per Cebu Island, partenza alle 19:25 e arrivo a Cebu City alle 22:10. Si dorme, il giorno dopo sveglia presto.",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20191330.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20191330.png",
+      "location_coords": {
+        "lat": 10.294421,
+        "lng": 123.89191
+      },
+      "accommodation_coords": {
+        "lat": 10.319456,
+        "lng": 123.962832
+      }
     },
     {
       "date": "2026-03-04",
@@ -108,7 +144,15 @@
       "isCruise": false,
       "accommodation": " The Coral Blue Oriental Beach Villas and Suites",
       "activities": "Autobus mattina presto per Bantayan, arrivo previsto ore 13-14. Pomeriggio in spiaggia",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204241.jpg"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204241.jpg",
+      "location_coords": {
+        "lat": 11.178792,
+        "lng": 123.740513
+      },
+      "accommodation_coords": {
+        "lat": 11.157514,
+        "lng": 123.807944
+      }
     },
     {
       "date": "2026-03-05",
@@ -117,7 +161,15 @@
       "isCruise": false,
       "accommodation": " The Coral Blue Oriental Beach Villas and Suites",
       "activities": "",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204331.jpg"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204331.jpg",
+      "location_coords": {
+        "lat": 11.178792,
+        "lng": 123.740513
+      },
+      "accommodation_coords": {
+        "lat": 11.157514,
+        "lng": 123.807944
+      }
     },
     {
       "date": "2026-03-06",
@@ -126,7 +178,15 @@
       "isCruise": false,
       "accommodation": " The Coral Blue Oriental Beach Villas and Suites",
       "activities": "",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204653.jpg"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204653.jpg",
+      "location_coords": {
+        "lat": 11.178792,
+        "lng": 123.740513
+      },
+      "accommodation_coords": {
+        "lat": 11.157514,
+        "lng": 123.807944
+      }
     },
     {
       "date": "2026-03-07",
@@ -135,7 +195,15 @@
       "isCruise": false,
       "accommodation": " The Coral Blue Oriental Beach Villas and Suites",
       "activities": "",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204424.jpg"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204424.jpg",
+      "location_coords": {
+        "lat": 11.178792,
+        "lng": 123.740513
+      },
+      "accommodation_coords": {
+        "lat": 11.157514,
+        "lng": 123.807944
+      }
     },
     {
       "date": "2026-03-08",
@@ -144,7 +212,15 @@
       "isCruise": false,
       "accommodation": " The Coral Blue Oriental Beach Villas and Suites",
       "activities": "",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204724.jpg"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204724.jpg",
+      "location_coords": {
+        "lat": 11.178792,
+        "lng": 123.740513
+      },
+      "accommodation_coords": {
+        "lat": 11.157514,
+        "lng": 123.807944
+      }
     },
     {
       "date": "2026-03-09",
@@ -153,7 +229,15 @@
       "isCruise": false,
       "accommodation": " The Coral Blue Oriental Beach Villas and Suites",
       "activities": "",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204547.jpg"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-12%20204547.jpg",
+      "location_coords": {
+        "lat": 11.178792,
+        "lng": 123.740513
+      },
+      "accommodation_coords": {
+        "lat": 11.157514,
+        "lng": 123.807944
+      }
     },
     {
       "date": "2026-03-10",
@@ -162,7 +246,15 @@
       "isCruise": false,
       "accommodation": "Two Seasons Coron Bayside Hotel",
       "activities": "Partenza la mattina presto dall'albergo per essere alle 5 del mattino a Bantayan town, da li autobus che porta a Cebu City. Volo dall'aeroporto di Cebu per Busuanga (coron island) che parte alle 13:40 e arriva a Busuanga alle 15:20. Poi un ora per arrivare all'Hotel.",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20194137.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20194137.png",
+      "location_coords": {
+        "lat": 12.071319,
+        "lng": 120.17564
+      },
+      "accommodation_coords": {
+        "lat": 11.993522,
+        "lng": 120.210968
+      }
     },
     {
       "date": "2026-03-11",
@@ -171,7 +263,15 @@
       "isCruise": false,
       "accommodation": "Two Seasons Coron Bayside Hotel",
       "activities": "",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20194201.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20194201.png",
+      "location_coords": {
+        "lat": 12.071319,
+        "lng": 120.17564
+      },
+      "accommodation_coords": {
+        "lat": 11.993522,
+        "lng": 120.210968
+      }
     },
     {
       "date": "2026-03-12",
@@ -180,7 +280,15 @@
       "isCruise": false,
       "accommodation": "Two Seasons Coron Bayside Hotel",
       "activities": "Escursione Tour C...",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20194954.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20194954.png",
+      "location_coords": {
+        "lat": 12.071319,
+        "lng": 120.17564
+      },
+      "accommodation_coords": {
+        "lat": 11.993522,
+        "lng": 120.210968
+      }
     },
     {
       "date": "2026-03-13",
@@ -189,7 +297,15 @@
       "isCruise": false,
       "accommodation": "Two Seasons Coron Bayside Hotel",
       "activities": "Escursione Tour B...",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193713.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193713.png",
+      "location_coords": {
+        "lat": 12.071319,
+        "lng": 120.17564
+      },
+      "accommodation_coords": {
+        "lat": 11.993522,
+        "lng": 120.210968
+      }
     },
     {
       "date": "2026-03-14",
@@ -198,7 +314,15 @@
       "isCruise": true,
       "accommodation": "A bordo della crociera",
       "activities": "crociera da Coron a El Nido",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20194013.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20194013.png",
+      "location_coords": {
+        "lat": 11.512573,
+        "lng": 119.79188
+      },
+      "accommodation_coords": {
+        "lat": 11.512573,
+        "lng": 119.79188
+      }
     },
     {
       "date": "2026-03-15",
@@ -207,16 +331,32 @@
       "isCruise": true,
       "accommodation": "A bordo della crociera",
       "activities": "crociera da Coron a El Nido",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20194101.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20194101.png",
+      "location_coords": {
+        "lat": 11.512573,
+        "lng": 119.79188
+      },
+      "accommodation_coords": {
+        "lat": 11.512573,
+        "lng": 119.79188
+      }
     },
     {
       "date": "2026-03-16",
-      "location": "Arrivo ad El Nido",
+      "location": "El Nido",
       "isFlight": false,
       "isCruise": true,
       "accommodation": "Mahogany Resort & Spa",
       "activities": "crociera da Coron a El Nido, arrivo all'hotel nel pomeriggio tardi",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193830.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193830.png",
+      "location_coords": {
+        "lat": 11.19317,
+        "lng": 119.420591
+      },
+      "accommodation_coords": {
+        "lat": 11.165194,
+        "lng": 119.397679
+      }
     },
     {
       "date": "2026-03-17",
@@ -225,7 +365,15 @@
       "isCruise": false,
       "accommodation": "Mahogany Resort & Spa",
       "activities": "tour El Nido",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193530.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193530.png",
+      "location_coords": {
+        "lat": 11.19317,
+        "lng": 119.420591
+      },
+      "accommodation_coords": {
+        "lat": 11.165194,
+        "lng": 119.397679
+      }
     },
     {
       "date": "2026-03-18",
@@ -234,7 +382,15 @@
       "isCruise": false,
       "accommodation": "Mahogany Resort & Spa",
       "activities": "",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193324.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193324.png",
+      "location_coords": {
+        "lat": 11.19317,
+        "lng": 119.420591
+      },
+      "accommodation_coords": {
+        "lat": 11.165194,
+        "lng": 119.397679
+      }
     },
     {
       "date": "2026-03-19",
@@ -243,7 +399,15 @@
       "isCruise": false,
       "accommodation": "Mahogany Resort & Spa",
       "activities": "",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193335.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193335.png",
+      "location_coords": {
+        "lat": 11.19317,
+        "lng": 119.420591
+      },
+      "accommodation_coords": {
+        "lat": 11.165194,
+        "lng": 119.397679
+      }
     },
     {
       "date": "2026-03-20",
@@ -252,25 +416,41 @@
       "isCruise": false,
       "accommodation": "Mahogany Resort & Spa",
       "activities": "",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193437.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20193437.png",
+      "location_coords": {
+        "lat": 11.19317,
+        "lng": 119.420591
+      },
+      "accommodation_coords": {
+        "lat": 11.165194,
+        "lng": 119.397679
+      }
     },
     {
       "date": "2026-03-21",
-      "location": "In Volo",
+      "location": "Manila",
       "isFlight": true,
       "isCruise": false,
       "accommodation": "A bordo del volo",
       "activities": "Partenza da El Nido alle 15:50, scalo a Manila, dovremo scaricare i bagagli e ricaricarli nell'altro volo. Volo Emirates alle 23:30 per Bologna con scalo a Dubai. ",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20195118.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20195118.png",
+      "location_coords": {
+        "lat": 14.59896,
+        "lng": 120.98917
+      }
     },
     {
       "date": "2026-03-22",
-      "location": "Italia",
+      "location": "Bologna",
       "isFlight": true,
       "isCruise": false,
       "accommodation": "Casa",
       "activities": "Arrivo a Bologna alle 12:40 del mattino.",
-      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20195203.png"
+      "image": "https://raw.githubusercontent.com/rigelpd/itinerario-filippine/main/Screenshot%202025-08-02%20195203.png",
+      "location_coords": {
+        "lat": 44.494586,
+        "lng": 11.342505
+      }
     }
   ],
   "tours": [],
