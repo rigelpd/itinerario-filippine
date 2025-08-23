@@ -328,7 +328,8 @@
                 "Topografica": topoMap
             };
             
-            const routeLayer = L.layerGroup();
+            const pathLayer = L.layerGroup();
+            const locationsLayer = L.layerGroup();
             const accommodationLayer = L.layerGroup();
 
             const formatDateForPopup = (dateString) => {
@@ -340,7 +341,6 @@
             const accommodationsMap = new Map();
 
             itineraryData.forEach((item) => {
-                // Processa Località
                 if (item.location && item.location_coords && item.location_coords.lat) {
                     const key = `${item.location_coords.lat},${item.location_coords.lng}`;
                     if (!locationsMap.has(key)) {
@@ -350,7 +350,6 @@
                     entry.names.add(item.location);
                     entry.dates.set(item.date, item.date);
                 }
-                // Processa Alloggi
                 if (item.accommodation && item.accommodation_coords && item.accommodation_coords.lat) {
                     const key = `${item.accommodation_coords.lat},${item.accommodation_coords.lng}`;
                      if (!accommodationsMap.has(key)) {
@@ -368,8 +367,14 @@
                 const dateLinks = sortedDates.map(date => `<a href="#" class="popup-date-link text-indigo-600 hover:underline p-1" data-date="${date}">${formatDateForPopup(date)}</a>`).join(', ');
                 const title = [...loc.names].join(' / ');
                 const popupContent = `<b>${title}</b><br><div class="mt-2"><b>Date:</b> ${dateLinks}</div>`;
-                const marker = L.marker([loc.coords.lat, loc.coords.lng]).bindPopup(popupContent);
-                routeLayer.addLayer(marker);
+                const marker = L.marker([loc.coords.lat, loc.coords.lng], {
+                    icon: new L.Icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                        iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+                    })
+                }).bindPopup(popupContent);
+                locationsLayer.addLayer(marker);
                 locationMarkers.push(marker);
             });
             
@@ -380,7 +385,7 @@
                 const popupContent = `<b>${title}</b><br><div class="mt-2"><b>Date:</b> ${dateLinks}</div>`;
                 const marker = L.marker([loc.coords.lat, loc.coords.lng], {
                     icon: new L.Icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
                         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
                         iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
                     })
@@ -394,16 +399,18 @@
             
             if (routePoints.length > 1) {
                 const polyline = L.polyline(routePoints, { color: 'red', weight: 3, opacity: 0.7 });
-                routeLayer.addLayer(polyline);
+                pathLayer.addLayer(polyline);
             }
 
             const overlayMaps = {
-                "<i class='pr-1'>&#128205;</i> Percorso e Località": routeLayer,
+                "<i class='pr-1'>&#128205;</i> Località": locationsLayer,
+                "<i class='pr-1'>&#127759;</i> Percorso": pathLayer,
                 "<i class='pr-1'>&#127974;</i> Alloggi": accommodationLayer
             };
 
             L.control.layers(baseMaps, overlayMaps).addTo(map);
-            routeLayer.addTo(map); // Visibile di default
+            locationsLayer.addTo(map); // Visibile di default
+            pathLayer.addTo(map); // Visibile di default
 
             const isInItaly = (lat, lng) => lat > 36 && lat < 47 && lng > 6 && lng < 19;
             const markersForBounds = locationMarkers.filter(marker => !isInItaly(marker.getLatLng().lat, marker.getLatLng().lng));
