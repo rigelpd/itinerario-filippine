@@ -551,6 +551,15 @@
         "person": "Margherita",
         "status": "paid",
         "onSplid": true
+      },
+      {
+        "id": 1756316115887,
+        "description": "Crociera 3D2N da Coron Island a El Nido (2 persone)",
+        "amount": 557.3,
+        "category": "tours",
+        "person": "Margherita",
+        "status": "paid",
+        "onSplid": true
       }
     ]
   },
