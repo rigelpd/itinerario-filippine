@@ -519,8 +519,8 @@
         "amount": 611,
         "category": "hotels",
         "person": "Margherita",
-        "status": "booked",
-        "onSplid": false,
+        "status": "paid",
+        "onSplid": true,
         "nights": 6
       },
       {
@@ -529,8 +529,8 @@
         "amount": 561,
         "category": "hotels",
         "person": "Margherita",
-        "status": "booked",
-        "onSplid": false,
+        "status": "paid",
+        "onSplid": true,
         "nights": 4
       },
       {
